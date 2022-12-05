@@ -27,7 +27,30 @@
       <to>Calculator</to>
       <enabled>Y</enabled>
     </hop>
+    <hop>
+      <from>Calculator</from>
+      <to>Calculator 2</to>
+      <enabled>Y</enabled>
+    </hop>
   </order>
+  <transform>
+    <name>Calculator</name>
+    <type>Calculator</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <failIfNoFile>Y</failIfNoFile>
+    <attributes/>
+    <GUI>
+      <xloc>512</xloc>
+      <yloc>128</yloc>
+    </GUI>
+  </transform>
   <transform>
     <name>Get data from XML</name>
     <type>getXMLData</type>
@@ -77,7 +100,7 @@
     </GUI>
   </transform>
   <transform>
-    <name>Calculator</name>
+    <name>Calculator 2</name>
     <type>Calculator</type>
     <description/>
     <distribute>Y</distribute>
@@ -90,8 +113,8 @@
     <failIfNoFile>Y</failIfNoFile>
     <attributes/>
     <GUI>
-      <xloc>560</xloc>
-      <yloc>96</yloc>
+      <xloc>656</xloc>
+      <yloc>128</yloc>
     </GUI>
   </transform>
   <transform_error_handling>
