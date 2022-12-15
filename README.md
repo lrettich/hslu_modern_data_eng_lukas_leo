@@ -1,6 +1,7 @@
 # Exam Project for HSLU Module "Modern Data Engineering"
 
 Lukas Erdin, Leo Rettich
+
 Fall semester 2022
 
 ## Files
