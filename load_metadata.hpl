@@ -58,64 +58,10 @@
     </hop>
     <hop>
       <from>Select values 3</from>
-      <to>Write to log</to>
-      <enabled>Y</enabled>
-    </hop>
-    <hop>
-      <from>Write to log</from>
-      <to>Insert / update</to>
+      <to>Table output</to>
       <enabled>Y</enabled>
     </hop>
   </order>
-  <transform>
-    <name>Insert / update</name>
-    <type>InsertUpdate</type>
-    <description/>
-    <distribute>Y</distribute>
-    <custom_distribution/>
-    <copies>1</copies>
-    <partitioning>
-      <method>none</method>
-      <schema_name/>
-    </partitioning>
-    <commit>100</commit>
-    <connection>azure_sql_db</connection>
-    <lookup>
-      <key>
-        <condition>=</condition>
-        <field>kienbaum_id</field>
-        <name>Kienbaum_ID</name>
-      </key>
-      <schema>[dbo]</schema>
-      <table>company</table>
-      <value>
-        <name>firma</name>
-        <rename>Firma</rename>
-        <update>Y</update>
-      </value>
-      <value>
-        <name>cmp_id</name>
-        <rename>cmp_id</rename>
-        <update>Y</update>
-      </value>
-      <value>
-        <name>kienbaum_id</name>
-        <rename>Kienbaum_ID</rename>
-        <update>Y</update>
-      </value>
-      <value>
-        <name>sector</name>
-        <rename>sector</rename>
-        <update>Y</update>
-      </value>
-    </lookup>
-    <update_bypassed>N</update_bypassed>
-    <attributes/>
-    <GUI>
-      <xloc>1136</xloc>
-      <yloc>192</yloc>
-    </GUI>
-  </transform>
   <transform>
     <name>Merge join</name>
     <type>MergeJoin</type>
@@ -217,7 +163,7 @@
         <startrow>0</startrow>
       </sheet>
     </sheets>
-    <spreadsheet_type>SAX_POI</spreadsheet_type>
+    <spreadsheet_type>POI</spreadsheet_type>
     <stoponempty>N</stoponempty>
     <strict_types>N</strict_types>
     <attributes/>
@@ -325,7 +271,7 @@
         <startrow>0</startrow>
       </sheet>
     </sheets>
-    <spreadsheet_type>SAX_POI</spreadsheet_type>
+    <spreadsheet_type>POI</spreadsheet_type>
     <stoponempty>N</stoponempty>
     <strict_types>N</strict_types>
     <attributes/>
@@ -390,7 +336,7 @@
     <name>Select values 3</name>
     <type>SelectValues</type>
     <description/>
-    <distribute>Y</distribute>
+    <distribute>N</distribute>
     <custom_distribution/>
     <copies>1</copies>
     <partitioning>
@@ -478,8 +424,8 @@
     </GUI>
   </transform>
   <transform>
-    <name>Write to log</name>
-    <type>WriteToLog</type>
+    <name>Table output</name>
+    <type>TableOutput</type>
     <description/>
     <distribute>Y</distribute>
     <custom_distribution/>
@@ -488,20 +434,34 @@
       <method>none</method>
       <schema_name/>
     </partitioning>
-    <loglevel>log_level_basic</loglevel>
-    <displayHeader>Y</displayHeader>
-    <limitRows>N</limitRows>
-    <limitRowsNumber>0</limitRowsNumber>
-    <logmessage/>
+    <commit>1000</commit>
+    <connection>azure_sql_db</connection>
     <fields>
-      </fields>
+</fields>
+    <ignore_errors>N</ignore_errors>
+    <only_when_have_rows>N</only_when_have_rows>
+    <partitioning_daily>N</partitioning_daily>
+    <partitioning_enabled>N</partitioning_enabled>
+    <partitioning_monthly>Y</partitioning_monthly>
+    <return_keys>N</return_keys>
+    <schema>dbo</schema>
+    <specify_fields>N</specify_fields>
+    <table>company</table>
+    <tablename_in_field>N</tablename_in_field>
+    <tablename_in_table>Y</tablename_in_table>
+    <truncate>Y</truncate>
+    <use_batch>Y</use_batch>
     <attributes/>
     <GUI>
-      <xloc>1008</xloc>
-      <yloc>320</yloc>
+      <xloc>1136</xloc>
+      <yloc>192</yloc>
     </GUI>
   </transform>
   <transform_error_handling>
   </transform_error_handling>
-  <attributes/>
+  <attributes>
+    <group>
+      <name>debug_plugin</name>
+    </group>
+  </attributes>
 </pipeline>
