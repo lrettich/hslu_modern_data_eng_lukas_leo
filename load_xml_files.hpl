@@ -22,7 +22,7 @@
   <order>
     <hop>
       <from>Get data from XML</from>
-      <to>Database lookup</to>
+      <to>Database lookup company_id</to>
       <enabled>Y</enabled>
     </hop>
     <hop>
@@ -31,18 +31,33 @@
       <enabled>Y</enabled>
     </hop>
     <hop>
-      <from>Database lookup</from>
-      <to>Strings cut</to>
+      <from>Database lookup company_id</from>
+      <to>Cut overlong job names</to>
       <enabled>Y</enabled>
     </hop>
     <hop>
-      <from>Strings cut</from>
+      <from>Cut overlong job names</from>
       <to>Select values</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Database lookup company_id</from>
+      <to>Database lookup company_name</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Database lookup company_name</from>
+      <to>Write to log</to>
+      <enabled>Y</enabled>
+    </hop>
+    <hop>
+      <from>Database lookup company_name</from>
+      <to>Cut overlong job names</to>
       <enabled>Y</enabled>
     </hop>
   </order>
   <transform>
-    <name>Database lookup</name>
+    <name>Database lookup company_id</name>
     <type>DBLookup</type>
     <description/>
     <distribute>Y</distribute>
@@ -57,28 +72,33 @@
     <cache_size>0</cache_size>
     <connection>azure_sql_db</connection>
     <lookup>
-      <eat_row_on_failure>Y</eat_row_on_failure>
+      <eat_row_on_failure>N</eat_row_on_failure>
       <fail_on_multiple>N</fail_on_multiple>
       <key>
         <condition>=</condition>
         <field>cmp_id</field>
         <name>company_id</name>
+        <name2/>
       </key>
+      <orderby/>
       <schema>dbo</schema>
       <table>company</table>
       <value>
+        <default/>
         <name>Kienbaum_ID</name>
         <rename>kienbaum_id</rename>
         <trim_type>none</trim_type>
         <type>Integer</type>
       </value>
       <value>
+        <default/>
         <name>Firma</name>
         <rename>company_name</rename>
         <trim_type>none</trim_type>
         <type>String</type>
       </value>
       <value>
+        <default/>
         <name>sector</name>
         <rename>sector</rename>
         <trim_type>none</trim_type>
@@ -89,6 +109,61 @@
     <GUI>
       <xloc>384</xloc>
       <yloc>112</yloc>
+    </GUI>
+  </transform>
+  <transform>
+    <name>Database lookup company_name</name>
+    <type>DBLookup</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <cache>Y</cache>
+    <cache_load_all>N</cache_load_all>
+    <cache_size>0</cache_size>
+    <connection>azure_sql_db</connection>
+    <lookup>
+      <eat_row_on_failure>N</eat_row_on_failure>
+      <fail_on_multiple>N</fail_on_multiple>
+      <key>
+        <condition>LIKE</condition>
+        <field>Firma</field>
+        <name>xml_company_name</name>
+        <name2/>
+      </key>
+      <orderby/>
+      <schema>dbo</schema>
+      <table>company</table>
+      <value>
+        <default/>
+        <name>Kienbaum_ID</name>
+        <rename>kienbaum_id</rename>
+        <trim_type>none</trim_type>
+        <type>Integer</type>
+      </value>
+      <value>
+        <default/>
+        <name>Firma</name>
+        <rename>company_name</rename>
+        <trim_type>none</trim_type>
+        <type>String</type>
+      </value>
+      <value>
+        <default/>
+        <name>sector</name>
+        <rename>sector</rename>
+        <trim_type>none</trim_type>
+        <type>String</type>
+      </value>
+    </lookup>
+    <attributes/>
+    <GUI>
+      <xloc>480</xloc>
+      <yloc>224</yloc>
     </GUI>
   </transform>
   <transform>
@@ -198,6 +273,21 @@
         <trim_type>none</trim_type>
         <repeat>N</repeat>
       </field>
+      <field>
+        <name>xml_company_name</name>
+        <xpath>company/name</xpath>
+        <element_type>node</element_type>
+        <result_type>valueof</result_type>
+        <type>String</type>
+        <format/>
+        <currency/>
+        <decimal/>
+        <group/>
+        <length>-1</length>
+        <precision>-1</precision>
+        <trim_type>none</trim_type>
+        <repeat>N</repeat>
+      </field>
     </fields>
     <limit>0</limit>
     <loopxpath>/response/jobs/job</loopxpath>
@@ -241,6 +331,9 @@
       <remove>
         <name>title</name>
       </remove>
+      <remove>
+        <name>xml_company_name</name>
+      </remove>
     </fields>
     <attributes/>
     <GUI>
@@ -249,7 +342,7 @@
     </GUI>
   </transform>
   <transform>
-    <name>Strings cut</name>
+    <name>Cut overlong job names</name>
     <type>StringCut</type>
     <description/>
     <distribute>Y</distribute>
@@ -261,6 +354,7 @@
     </partitioning>
     <fields>
       <field>
+        <cut_from/>
         <cut_to>99</cut_to>
         <in_stream_name>title</in_stream_name>
         <out_stream_name>job_title</out_stream_name>
@@ -306,10 +400,61 @@
       <yloc>112</yloc>
     </GUI>
   </transform>
+  <transform>
+    <name>Write to log</name>
+    <type>WriteToLog</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <loglevel>log_level_basic</loglevel>
+    <displayHeader>Y</displayHeader>
+    <limitRows>N</limitRows>
+    <limitRowsNumber>0</limitRowsNumber>
+    <logmessage>Job not loaded because company was not found in the DB</logmessage>
+    <fields>
+      <field>
+        <name>company_id</name>
+      </field>
+      <field>
+        <name>xml_company_name</name>
+      </field>
+      <field>
+        <name>filename</name>
+      </field>
+      <field>
+        <name>job_id</name>
+      </field>
+      <field>
+        <name>title</name>
+      </field>
+    </fields>
+    <attributes/>
+    <GUI>
+      <xloc>592</xloc>
+      <yloc>336</yloc>
+    </GUI>
+  </transform>
   <transform_error_handling>
     <error>
-      <source_transform>Database lookup</source_transform>
-      <target_transform/>
+      <source_transform>Database lookup company_id</source_transform>
+      <target_transform>Database lookup company_name</target_transform>
+      <is_enabled>Y</is_enabled>
+      <nr_valuename/>
+      <descriptions_valuename/>
+      <fields_valuename/>
+      <codes_valuename/>
+      <max_errors/>
+      <max_pct_errors/>
+      <min_pct_rows/>
+    </error>
+    <error>
+      <source_transform>Database lookup company_name</source_transform>
+      <target_transform>Write to log</target_transform>
       <is_enabled>Y</is_enabled>
       <nr_valuename/>
       <descriptions_valuename/>
