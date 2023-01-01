@@ -102,22 +102,27 @@
         <condition>=</condition>
         <field>cmp_id</field>
         <name>company_id</name>
+        <name2/>
       </key>
+      <orderby/>
       <schema>dbo</schema>
-      <table>company</table>
+      <table>company_metadata</table>
       <value>
+        <default/>
         <name>Kienbaum_ID</name>
         <rename>kienbaum_id</rename>
         <trim_type>none</trim_type>
         <type>Integer</type>
       </value>
       <value>
+        <default/>
         <name>Firma</name>
         <rename>company_name</rename>
         <trim_type>none</trim_type>
         <type>String</type>
       </value>
       <value>
+        <default/>
         <name>sector</name>
         <rename>sector</rename>
         <trim_type>none</trim_type>
@@ -152,22 +157,27 @@
         <condition>LIKE</condition>
         <field>Firma</field>
         <name>xml_company_name</name>
+        <name2/>
       </key>
+      <orderby/>
       <schema>dbo</schema>
-      <table>company</table>
+      <table>company_metadata</table>
       <value>
+        <default/>
         <name>Kienbaum_ID</name>
         <rename>kienbaum_id</rename>
         <trim_type>none</trim_type>
         <type>Integer</type>
       </value>
       <value>
+        <default/>
         <name>Firma</name>
         <rename>company_name</rename>
         <trim_type>none</trim_type>
         <type>String</type>
       </value>
       <value>
+        <default/>
         <name>sector</name>
         <rename>sector</rename>
         <trim_type>none</trim_type>
@@ -374,14 +384,11 @@
     <only_when_have_rows>N</only_when_have_rows>
     <partitioning_daily>N</partitioning_daily>
     <partitioning_enabled>N</partitioning_enabled>
-    <partitioning_field/>
     <partitioning_monthly>Y</partitioning_monthly>
-    <return_field/>
     <return_keys>N</return_keys>
     <schema>dbo</schema>
     <specify_fields>N</specify_fields>
     <table>job_staging</table>
-    <tablename_field/>
     <tablename_in_field>N</tablename_in_field>
     <tablename_in_table>Y</tablename_in_table>
     <truncate>Y</truncate>

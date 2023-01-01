@@ -62,6 +62,88 @@
     </hop>
   </order>
   <transform>
+    <name>Add constants</name>
+    <type>Constant</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <fields>
+      <field>
+        <length>-1</length>
+        <name>week_length</name>
+        <nullif>7</nullif>
+        <precision>-1</precision>
+        <set_empty_string>N</set_empty_string>
+        <type>Integer</type>
+      </field>
+    </fields>
+    <attributes/>
+    <GUI>
+      <xloc>624</xloc>
+      <yloc>80</yloc>
+    </GUI>
+  </transform>
+  <transform>
+    <name>Calculate days_open</name>
+    <type>Calculator</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <calculation>
+      <calc_type>DATE_DIFF</calc_type>
+      <field_a>lastseen</field_a>
+      <field_b>firstseen</field_b>
+      <field_name>days_open</field_name>
+      <remove>N</remove>
+      <value_length>-1</value_length>
+      <value_precision>-1</value_precision>
+    </calculation>
+    <failIfNoFile>Y</failIfNoFile>
+    <attributes/>
+    <GUI>
+      <xloc>480</xloc>
+      <yloc>80</yloc>
+    </GUI>
+  </transform>
+  <transform>
+    <name>Calculate weeks_open</name>
+    <type>Calculator</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <calculation>
+      <calc_type>DIVIDE</calc_type>
+      <field_a>days_open</field_a>
+      <field_b>week_length</field_b>
+      <field_name>weeks_open_raw</field_name>
+      <remove>N</remove>
+      <value_length>-1</value_length>
+      <value_precision>-1</value_precision>
+      <value_type>Number</value_type>
+    </calculation>
+    <failIfNoFile>Y</failIfNoFile>
+    <attributes/>
+    <GUI>
+      <xloc>784</xloc>
+      <yloc>80</yloc>
+    </GUI>
+  </transform>
+  <transform>
     <name>Change to date format</name>
     <type>SelectValues</type>
     <description/>
@@ -196,158 +278,8 @@
     </fields>
     <attributes/>
     <GUI>
-      <xloc>432</xloc>
-      <yloc>96</yloc>
-    </GUI>
-  </transform>
-  <transform>
-    <name>Table input</name>
-    <type>TableInput</type>
-    <description/>
-    <distribute>Y</distribute>
-    <custom_distribution/>
-    <copies>1</copies>
-    <partitioning>
-      <method>none</method>
-      <schema_name/>
-    </partitioning>
-    <connection>azure_sql_db</connection>
-    <execute_each_row>N</execute_each_row>
-    <limit>0</limit>
-    <sql>SELECT job_id, job_title, firstseen, lastseen, kienbaum_id AS company_id, company_name, sector from dbo.job_staging;</sql>
-    <variables_active>N</variables_active>
-    <attributes/>
-    <GUI>
-      <xloc>144</xloc>
-      <yloc>96</yloc>
-    </GUI>
-  </transform>
-  <transform>
-    <name>Strings cut</name>
-    <type>StringCut</type>
-    <description/>
-    <distribute>Y</distribute>
-    <custom_distribution/>
-    <copies>1</copies>
-    <partitioning>
-      <method>none</method>
-      <schema_name/>
-    </partitioning>
-    <fields>
-      <field>
-        <cut_from>0</cut_from>
-        <cut_to>10</cut_to>
-        <in_stream_name>firstseen</in_stream_name>
-        <out_stream_name/>
-      </field>
-      <field>
-        <cut_from>0</cut_from>
-        <cut_to>10</cut_to>
-        <in_stream_name>lastseen</in_stream_name>
-        <out_stream_name/>
-      </field>
-    </fields>
-    <attributes/>
-    <GUI>
-      <xloc>288</xloc>
-      <yloc>96</yloc>
-    </GUI>
-  </transform>
-  <transform>
-    <name>Calculate days_open</name>
-    <type>Calculator</type>
-    <description/>
-    <distribute>Y</distribute>
-    <custom_distribution/>
-    <copies>1</copies>
-    <partitioning>
-      <method>none</method>
-      <schema_name/>
-    </partitioning>
-    <calculation>
-      <calc_type>DATE_DIFF</calc_type>
-      <conversion_mask/>
-      <currency_symbol/>
-      <decimal_symbol/>
-      <field_a>lastseen</field_a>
-      <field_b>firstseen</field_b>
-      <field_c/>
-      <field_name>days_open</field_name>
-      <grouping_symbol/>
-      <remove>N</remove>
-      <value_length>-1</value_length>
-      <value_precision>-1</value_precision>
-      <value_type/>
-    </calculation>
-    <failIfNoFile>Y</failIfNoFile>
-    <attributes/>
-    <GUI>
-      <xloc>592</xloc>
-      <yloc>96</yloc>
-    </GUI>
-  </transform>
-  <transform>
-    <name>Calculate weeks_open</name>
-    <type>Calculator</type>
-    <description/>
-    <distribute>Y</distribute>
-    <custom_distribution/>
-    <copies>1</copies>
-    <partitioning>
-      <method>none</method>
-      <schema_name/>
-    </partitioning>
-    <calculation>
-      <calc_type>DIVIDE</calc_type>
-      <conversion_mask/>
-      <currency_symbol/>
-      <decimal_symbol/>
-      <field_a>days_open</field_a>
-      <field_b>week_length</field_b>
-      <field_c/>
-      <field_name>weeks_open_raw</field_name>
-      <grouping_symbol/>
-      <remove>N</remove>
-      <value_length>-1</value_length>
-      <value_precision>-1</value_precision>
-      <value_type>Number</value_type>
-    </calculation>
-    <failIfNoFile>Y</failIfNoFile>
-    <attributes/>
-    <GUI>
-      <xloc>912</xloc>
-      <yloc>96</yloc>
-    </GUI>
-  </transform>
-  <transform>
-    <name>Add constants</name>
-    <type>Constant</type>
-    <description/>
-    <distribute>Y</distribute>
-    <custom_distribution/>
-    <copies>1</copies>
-    <partitioning>
-      <method>none</method>
-      <schema_name/>
-    </partitioning>
-    <fields>
-      <field>
-        <currency/>
-        <decimal/>
-        <format/>
-        <group/>
-        <length>-1</length>
-        <name>week_length</name>
-        <nullif>7</nullif>
-        <precision>-1</precision>
-        <set_empty_string>N</set_empty_string>
-        <type>Integer</type>
-      </field>
-    </fields>
-    <attributes/>
-    <GUI>
-      <xloc>768</xloc>
-      <yloc>96</yloc>
+      <xloc>304</xloc>
+      <yloc>80</yloc>
     </GUI>
   </transform>
   <transform>
@@ -363,24 +295,17 @@
     </partitioning>
     <calculation>
       <calc_type>CEIL</calc_type>
-      <conversion_mask/>
-      <currency_symbol/>
-      <decimal_symbol/>
       <field_a>weeks_open_raw</field_a>
-      <field_b/>
-      <field_c/>
       <field_name>weeks_open</field_name>
-      <grouping_symbol/>
       <remove>N</remove>
       <value_length>-1</value_length>
       <value_precision>-1</value_precision>
-      <value_type/>
     </calculation>
     <failIfNoFile>Y</failIfNoFile>
     <attributes/>
     <GUI>
-      <xloc>1104</xloc>
-      <yloc>96</yloc>
+      <xloc>960</xloc>
+      <yloc>80</yloc>
     </GUI>
   </transform>
   <transform>
@@ -408,8 +333,59 @@
     </fields>
     <attributes/>
     <GUI>
-      <xloc>1248</xloc>
-      <yloc>96</yloc>
+      <xloc>1104</xloc>
+      <yloc>80</yloc>
+    </GUI>
+  </transform>
+  <transform>
+    <name>Strings cut</name>
+    <type>StringCut</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <fields>
+      <field>
+        <cut_from>0</cut_from>
+        <cut_to>10</cut_to>
+        <in_stream_name>firstseen</in_stream_name>
+      </field>
+      <field>
+        <cut_from>0</cut_from>
+        <cut_to>10</cut_to>
+        <in_stream_name>lastseen</in_stream_name>
+      </field>
+    </fields>
+    <attributes/>
+    <GUI>
+      <xloc>160</xloc>
+      <yloc>80</yloc>
+    </GUI>
+  </transform>
+  <transform>
+    <name>Table input</name>
+    <type>TableInput</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <connection>azure_sql_db</connection>
+    <execute_each_row>N</execute_each_row>
+    <limit>0</limit>
+    <sql>SELECT job_id, job_title, firstseen, lastseen, kienbaum_id AS company_id, company_name, sector from dbo.job_staging;</sql>
+    <variables_active>N</variables_active>
+    <attributes/>
+    <GUI>
+      <xloc>64</xloc>
+      <yloc>80</yloc>
     </GUI>
   </transform>
   <transform>
@@ -431,22 +407,19 @@
     <only_when_have_rows>N</only_when_have_rows>
     <partitioning_daily>N</partitioning_daily>
     <partitioning_enabled>N</partitioning_enabled>
-    <partitioning_field/>
     <partitioning_monthly>Y</partitioning_monthly>
-    <return_field/>
     <return_keys>N</return_keys>
     <schema>dbo</schema>
     <specify_fields>N</specify_fields>
     <table>job_storage</table>
-    <tablename_field/>
     <tablename_in_field>N</tablename_in_field>
     <tablename_in_table>Y</tablename_in_table>
     <truncate>Y</truncate>
     <use_batch>Y</use_batch>
     <attributes/>
     <GUI>
-      <xloc>1456</xloc>
-      <yloc>96</yloc>
+      <xloc>1232</xloc>
+      <yloc>80</yloc>
     </GUI>
   </transform>
   <transform_error_handling>
