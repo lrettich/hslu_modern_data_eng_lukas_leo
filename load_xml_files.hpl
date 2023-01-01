@@ -57,6 +57,30 @@
     </hop>
   </order>
   <transform>
+    <name>Cut overlong job names</name>
+    <type>StringCut</type>
+    <description/>
+    <distribute>Y</distribute>
+    <custom_distribution/>
+    <copies>1</copies>
+    <partitioning>
+      <method>none</method>
+      <schema_name/>
+    </partitioning>
+    <fields>
+      <field>
+        <cut_to>99</cut_to>
+        <in_stream_name>title</in_stream_name>
+        <out_stream_name>job_title</out_stream_name>
+      </field>
+    </fields>
+    <attributes/>
+    <GUI>
+      <xloc>608</xloc>
+      <yloc>112</yloc>
+    </GUI>
+  </transform>
+  <transform>
     <name>Database lookup company_id</name>
     <type>DBLookup</type>
     <description/>
@@ -78,27 +102,22 @@
         <condition>=</condition>
         <field>cmp_id</field>
         <name>company_id</name>
-        <name2/>
       </key>
-      <orderby/>
       <schema>dbo</schema>
       <table>company</table>
       <value>
-        <default/>
         <name>Kienbaum_ID</name>
         <rename>kienbaum_id</rename>
         <trim_type>none</trim_type>
         <type>Integer</type>
       </value>
       <value>
-        <default/>
         <name>Firma</name>
         <rename>company_name</rename>
         <trim_type>none</trim_type>
         <type>String</type>
       </value>
       <value>
-        <default/>
         <name>sector</name>
         <rename>sector</rename>
         <trim_type>none</trim_type>
@@ -133,27 +152,22 @@
         <condition>LIKE</condition>
         <field>Firma</field>
         <name>xml_company_name</name>
-        <name2/>
       </key>
-      <orderby/>
       <schema>dbo</schema>
       <table>company</table>
       <value>
-        <default/>
         <name>Kienbaum_ID</name>
         <rename>kienbaum_id</rename>
         <trim_type>none</trim_type>
         <type>Integer</type>
       </value>
       <value>
-        <default/>
         <name>Firma</name>
         <rename>company_name</rename>
         <trim_type>none</trim_type>
         <type>String</type>
       </value>
       <value>
-        <default/>
         <name>sector</name>
         <rename>sector</rename>
         <trim_type>none</trim_type>
@@ -342,31 +356,6 @@
     </GUI>
   </transform>
   <transform>
-    <name>Cut overlong job names</name>
-    <type>StringCut</type>
-    <description/>
-    <distribute>Y</distribute>
-    <custom_distribution/>
-    <copies>1</copies>
-    <partitioning>
-      <method>none</method>
-      <schema_name/>
-    </partitioning>
-    <fields>
-      <field>
-        <cut_from/>
-        <cut_to>99</cut_to>
-        <in_stream_name>title</in_stream_name>
-        <out_stream_name>job_title</out_stream_name>
-      </field>
-    </fields>
-    <attributes/>
-    <GUI>
-      <xloc>608</xloc>
-      <yloc>112</yloc>
-    </GUI>
-  </transform>
-  <transform>
     <name>Table output</name>
     <type>TableOutput</type>
     <description/>
@@ -385,11 +374,14 @@
     <only_when_have_rows>N</only_when_have_rows>
     <partitioning_daily>N</partitioning_daily>
     <partitioning_enabled>N</partitioning_enabled>
+    <partitioning_field/>
     <partitioning_monthly>Y</partitioning_monthly>
+    <return_field/>
     <return_keys>N</return_keys>
     <schema>dbo</schema>
     <specify_fields>N</specify_fields>
-    <table>jobs</table>
+    <table>job_staging</table>
+    <tablename_field/>
     <tablename_in_field>N</tablename_in_field>
     <tablename_in_table>Y</tablename_in_table>
     <truncate>Y</truncate>
