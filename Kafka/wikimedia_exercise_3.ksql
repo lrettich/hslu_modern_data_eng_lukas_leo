@@ -1,0 +1,25 @@
+----- EXERCISE 3.1 -----
+-- Create materialized table
+CREATE TABLE wikimedia_count_change_bot
+WITH (kafka_topic='wikimedia_bot_count') AS
+SELECT 
+    1,
+    SUM(CASE WHEN bot = true THEN 1 ELSE 0 END) AS bot_change_count,
+    SUM(CASE WHEN bot = true THEN 0 ELSE 1 END) AS non_bot_change_count
+FROM WIKIMEDIA_RECENTCHANGES_STREAM
+group by 1;
+
+-- Pull query
+SELECT 
+    bot_change_count,
+    non_bot_change_count,
+    CAST(bot_change_count AS DOUBLE) / CAST(bot_change_count + non_bot_change_count AS DOUBLE) AS bot_prc 
+FROM  wikimedia_count_change_bot;
+
+-- Push query
+SELECT 
+    bot_change_count,
+    non_bot_change_count,
+    CAST(bot_change_count AS DOUBLE) / CAST(bot_change_count + non_bot_change_count AS DOUBLE) AS bot_prc 
+FROM  wikimedia_count_change_bot
+EMIT CHANGES;

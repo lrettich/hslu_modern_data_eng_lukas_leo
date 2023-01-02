@@ -1,0 +1,24 @@
+-- Push query
+SELECT 
+    meta->domain, 
+    COUNT(*) 
+FROM WIKIMEDIA_RECENTCHANGES_STREAM
+GROUP BY meta->domain
+EMIT CHANGES;
+
+-- Create materialized table
+CREATE TABLE wikimedia_count_change_per_domain
+WITH (kafka_topic='wikimedia_domain_count') AS
+SELECT 
+    meta->domain AS domain, 
+    COUNT(*) as change_count
+FROM WIKIMEDIA_RECENTCHANGES_STREAM
+GROUP BY meta->domain;
+
+-- Pull query
+SELECT * FROM wikimedia_count_change_per_domain;
+
+-- Push query
+SELECT * FROM wikimedia_count_change_per_domain EMIT CHANGES;
+
+-- It is the domain "www.wikidata.org" where the most changes are happening. 

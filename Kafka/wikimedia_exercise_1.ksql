@@ -1,0 +1,25 @@
+CREATE STREAM WIKIMEDIA_RECENTCHANGES_STREAM (
+    meta STRUCT<
+        domain VARCHAR,
+        dt TIMESTAMP,
+        id VARCHAR,
+        request_id VARCHAR,
+        uri VARCHAR
+    >,
+    id BIGINT,
+    type VARCHAR,
+    title VARCHAR,
+    comment VARCHAR,
+    parsedcomment VARCHAR,
+    timestamp BIGINT,
+    user VARCHAR,
+    bot BOOLEAN,
+    server_url VARCHAR,
+    server_name VARCHAR,
+    server_script_path VARCHAR,
+    wiki VARCHAR) 
+WITH (
+    kafka_topic='wikimedia_recentchange',
+    value_format='AVRO',
+    key_format='JSON',
+    TIMESTAMP='timestamp');
