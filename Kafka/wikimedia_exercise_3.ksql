@@ -23,3 +23,87 @@ SELECT
     CAST(bot_change_count AS DOUBLE) / CAST(bot_change_count + non_bot_change_count AS DOUBLE) AS bot_prc 
 FROM  wikimedia_count_change_bot
 EMIT CHANGES;
+
+-- The overall percentage of messages created by bots is around 33%.
+
+
+----- EXERCISE 3.2 -----
+-- Create materialized table
+CREATE TABLE wikimedia_count_change_bot_per_domain
+WITH (kafka_topic='wikimedia_bot_count_domain') AS
+SELECT 
+    meta->domain AS domain,
+    SUM(CASE WHEN bot = true THEN 1 ELSE 0 END) AS bot_change_count,
+    SUM(CASE WHEN bot = true THEN 0 ELSE 1 END) AS non_bot_change_count
+FROM WIKIMEDIA_RECENTCHANGES_STREAM
+group by meta->domain;
+
+-- Pull query
+SELECT 
+    domain,
+    bot_change_count,
+    non_bot_change_count,
+    CAST(bot_change_count AS DOUBLE) / CAST(bot_change_count + non_bot_change_count AS DOUBLE) AS bot_prc 
+FROM  wikimedia_count_change_bot_per_domain;
+
+-- Push query
+SELECT 
+    domain,
+    bot_change_count,
+    non_bot_change_count,
+    CAST(bot_change_count AS DOUBLE) / CAST(bot_change_count + non_bot_change_count AS DOUBLE) AS bot_prc 
+FROM  wikimedia_count_change_bot_per_domain
+EMIT CHANGES;
+
+-- TODO: State answer
+
+
+----- EXERCISE 3.3 -----
+-- Create intermediate stream to transform timestamp
+CREATE STREAM wikimedia_recentchange_ts_transform
+    WITH(
+        kafka_topic = 'wikimedia_recentchange_ts_transform',
+        value_format='AVRO',
+        key_format='JSON',
+        TIMESTAMP='timestamp'
+    )
+AS SELECT
+    timestamp*1000 AS timestamp,
+    bot,
+    meta->domain AS domain
+FROM WIKIMEDIA_RECENTCHANGES_STREAM
+EMIT CHANGES;
+
+-- Create materialized table
+CREATE TABLE wikimedia_count_change_bot_timewindow
+WITH (kafka_topic='wikimedia_bot_count_timewindow') AS
+SELECT 
+    1,
+    TIMESTAMPTOSTRING(WINDOWSTART, 'yyy-MM-dd HH:mm:ss', 'UTC') AS window_start,
+    TIMESTAMPTOSTRING(WINDOWEND, 'yyy-MM-dd HH:mm:ss', 'UTC') AS window_end,
+    SUM(CASE WHEN bot = true THEN 1 ELSE 0 END) AS bot_change_count,
+    SUM(CASE WHEN bot = true THEN 0 ELSE 1 END) AS non_bot_change_count
+FROM wikimedia_recentchange_ts_transform
+WINDOW TUMBLING (SIZE 10 SECONDS)
+group by 1;
+
+-- EMIT FINAL???
+
+-- Pull query
+SELECT 
+    window_start,
+    window_end,
+    bot_change_count,
+    non_bot_change_count,
+    CAST(bot_change_count AS DOUBLE) / CAST(bot_change_count + non_bot_change_count AS DOUBLE) AS bot_prc 
+FROM  wikimedia_count_change_bot_timewindow;
+
+-- Push query
+SELECT 
+    window_start,
+    window_end,
+    bot_change_count,
+    non_bot_change_count,
+    CAST(bot_change_count AS DOUBLE) / CAST(bot_change_count + non_bot_change_count AS DOUBLE) AS bot_prc 
+FROM  wikimedia_count_change_bot_timewindow
+EMIT CHANGES;
