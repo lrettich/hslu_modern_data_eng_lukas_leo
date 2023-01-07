@@ -1,0 +1,57 @@
+----- EXERCISE 5: BONUS -----
+-- Create stream with words only. 
+CREATE STREAM wikimedia_recentchange_comment_words
+    WITH(
+        kafka_topic = 'wikimedia_recentchange_comment_words',
+        value_format='AVRO',
+        key_format='JSON',
+        TIMESTAMP='timestamp'
+    )
+AS SELECT
+    EXPLODE(REGEXP_EXTRACT_ALL('(\\w+)', comment)) AS comment_word,
+    meta->domain as domain,
+    timestamp
+FROM WIKIMEDIA_RECENTCHANGES_STREAM
+EMIT CHANGES;
+
+
+--- Number of words overall ---
+
+-- Create materialized table
+CREATE TABLE wikimedia_comment_word_count
+WITH (kafka_topic='wikimedia_comment_word_count') AS
+SELECT 
+    comment_word,
+    COUNT(*) as count
+FROM wikimedia_recentchange_comment_words
+GROUP BY comment_word;
+
+-- Pull query
+SELECT * FROM wikimedia_comment_word_count;
+
+-- Push query
+SELECT * FROM wikimedia_comment_word_count EMIT CHANGES;
+
+
+--- Number of words per domain ---
+
+-- Create materialized table
+CREATE TABLE wikimedia_comment_word_count_per_domain
+WITH (kafka_topic='wikimedia_comment_word_count_per_domain') AS
+SELECT 
+    domain,
+    comment_word,
+    COUNT(*) as count
+FROM wikimedia_recentchange_comment_words
+GROUP BY domain, comment_word;
+
+-- Pull query
+SELECT * FROM wikimedia_comment_word_count_per_domain;
+
+-- Push query
+SELECT * FROM wikimedia_comment_word_count_per_domain EMIT CHANGES;
+
+SELECT * FROM wikimedia_comment_word_count_per_domain 
+WHERE domain = 'de.wikipedia.org';
+
+-- The most common word in german wikipedia change comments is "Kategorie".

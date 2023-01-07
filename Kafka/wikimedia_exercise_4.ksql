@@ -1,0 +1,32 @@
+----- EXERCISE 4.1 -----
+-- Create materialized table
+CREATE TABLE wikimedia_count_change_per_type
+WITH (kafka_topic='wikimedia_type_count') AS
+SELECT 
+    type, 
+    COUNT(*) as change_count
+FROM WIKIMEDIA_RECENTCHANGES_STREAM
+GROUP BY type;
+
+-- Pull query
+SELECT * FROM wikimedia_count_change_per_type;
+
+-- Push query
+SELECT * FROM wikimedia_count_change_per_type EMIT CHANGES;
+
+
+----- EXERCISE 4.2 -----
+CREATE TABLE wikimedia_count_change_per_domain_and_type
+WITH (kafka_topic='wikimedia_type_domain_count') AS
+SELECT 
+    meta->domain AS domain,
+    type, 
+    COUNT(*) as change_count
+FROM WIKIMEDIA_RECENTCHANGES_STREAM
+GROUP BY meta->domain, type;
+
+-- Pull query
+SELECT * FROM wikimedia_count_change_per_domain_and_type;
+
+-- Push query
+SELECT * FROM wikimedia_count_change_per_domain_and_type EMIT CHANGES;

@@ -1,0 +1,280 @@
+----- REPETITION OF EXERCISE 3.1 - 3.4 WITH TYPE INSTEAD OF BOT -----
+
+-- EXERCISE 3.1
+
+-- Create materialized table
+CREATE TABLE wikimedia_count_change_type
+WITH (kafka_topic='wikimedia_bot_count') AS
+SELECT 
+    1,
+    SUM(CASE WHEN type = 'edit' THEN 1 ELSE 0 END) AS edit_count,
+    SUM(CASE WHEN type = 'categorize' THEN 1 ELSE 0 END) AS categorize_count,
+    SUM(CASE WHEN type = 'log' THEN 1 ELSE 0 END) AS log_count,
+    SUM(CASE WHEN type = 'new' THEN 1 ELSE 0 END) AS new_count
+FROM WIKIMEDIA_RECENTCHANGES_STREAM
+group by 1;
+
+-- Pull query
+SELECT 
+    CAST(edit_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS edit_prc, 
+    CAST(categorize_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS categorize_prc, 
+    CAST(log_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS log_prc, 
+    CAST(new_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS new_prc 
+FROM wikimedia_count_change_type;
+
+-- Push query
+SELECT 
+    CAST(edit_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS edit_prc, 
+    CAST(categorize_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS categorize_prc, 
+    CAST(log_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS log_prc, 
+    CAST(new_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS new_prc 
+FROM wikimedia_count_change_type
+EMIT CHANGES;
+
+-- The overall percentage are:
+--   Edit:       58%
+--   Categorize: 30%
+--   Log:        9%
+--   New:        2%
+
+
+-- EXERCISE 3.2
+
+-- Create materialized table
+CREATE TABLE wikimedia_count_change_type_per_domain
+WITH (kafka_topic='wikimedia_bot_count_domain') AS
+SELECT 
+    meta->domain AS domain,
+    SUM(CASE WHEN type = 'edit' THEN 1 ELSE 0 END) AS edit_count,
+    SUM(CASE WHEN type = 'categorize' THEN 1 ELSE 0 END) AS categorize_count,
+    SUM(CASE WHEN type = 'log' THEN 1 ELSE 0 END) AS log_count,
+    SUM(CASE WHEN type = 'new' THEN 1 ELSE 0 END) AS new_count
+FROM WIKIMEDIA_RECENTCHANGES_STREAM
+group by meta->domain;
+
+-- Pull query
+SELECT 
+    domain,
+    CAST(edit_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS edit_prc, 
+    CAST(categorize_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS categorize_prc, 
+    CAST(log_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS log_prc, 
+    CAST(new_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS new_prc 
+FROM wikimedia_count_change_type_per_domain;
+
+-- Push query
+SELECT 
+    domain,
+    CAST(edit_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS edit_prc, 
+    CAST(categorize_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS categorize_prc, 
+    CAST(log_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS log_prc, 
+    CAST(new_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS new_prc 
+FROM wikimedia_count_change_type_per_domain
+EMIT CHANGES;
+
+-- There are many domains with very few changes. 
+-- These are showing extrem percentages. 
+-- Hence, domains with less than 1000 changes are excluded.
+SELECT 
+    domain,
+    CAST(edit_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS edit_prc, 
+    CAST(categorize_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS categorize_prc, 
+    CAST(log_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS log_prc, 
+    CAST(new_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS new_prc 
+FROM wikimedia_count_change_type_per_domain
+WHERE edit_count + categorize_count + log_count + new_count >= 1000;
+
+-- The domain with the largest fraction of edit-changes is "www.wikidata.org".
+-- The domain with the largest fraction of categorize-changes is "lv.wikipedia.org".
+-- The domain with the largest fraction of log-changes is "ru.wikipedia.org".
+-- The domain with the largest fraction of new-changes is "de.wikipedia.org".
+
+
+-- EXERCISE 3.3 
+
+-- Create intermediate stream to transform timestamp
+CREATE STREAM wikimedia_recentchange_ts_transform_type
+    WITH(
+        kafka_topic = 'wikimedia_recentchange_ts_transform_type',
+        value_format='AVRO',
+        key_format='JSON',
+        TIMESTAMP='timestamp'
+    )
+AS SELECT
+    timestamp*1000 AS timestamp,
+    type,
+    meta->domain AS domain
+FROM WIKIMEDIA_RECENTCHANGES_STREAM
+EMIT CHANGES;
+
+-- Set property to allow "EMIT FINAL"
+SET 'ksql.suppress.enabled'='true';
+
+-- Create materialized table
+CREATE TABLE wikimedia_count_change_type_timewindow
+WITH (kafka_topic='wikimedia_type_count_timewindow') AS
+SELECT 
+    1,
+    TIMESTAMPTOSTRING(WINDOWSTART, 'yyy-MM-dd HH:mm:ss', 'UTC') AS window_start,
+    TIMESTAMPTOSTRING(WINDOWEND, 'yyy-MM-dd HH:mm:ss', 'UTC') AS window_end,
+    SUM(CASE WHEN type = 'edit' THEN 1 ELSE 0 END) AS edit_count,
+    SUM(CASE WHEN type = 'categorize' THEN 1 ELSE 0 END) AS categorize_count,
+    SUM(CASE WHEN type = 'log' THEN 1 ELSE 0 END) AS log_count,
+    SUM(CASE WHEN type = 'new' THEN 1 ELSE 0 END) AS new_count
+FROM wikimedia_recentchange_ts_transform_type
+WINDOW TUMBLING (SIZE 10 SECONDS)
+group by 1
+EMIT FINAL;
+
+-- Pull query
+SELECT 
+    window_start,
+    window_end,
+    CAST(edit_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS edit_prc, 
+    CAST(categorize_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS categorize_prc, 
+    CAST(log_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS log_prc, 
+    CAST(new_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS new_prc 
+FROM wikimedia_count_change_type_timewindow;
+
+-- Push query
+SELECT 
+    window_start,
+    window_end,
+    CAST(edit_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS edit_prc, 
+    CAST(categorize_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS categorize_prc, 
+    CAST(log_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS log_prc, 
+    CAST(new_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS new_prc 
+FROM wikimedia_count_change_type_timewindow
+EMIT CHANGES;
+
+
+-- EXERCISE 3.4
+
+-- Create materialized table
+CREATE TABLE wikimedia_count_change_type_domain_timewindow
+WITH (kafka_topic='wikimedia_count_change_type_domain_timewindow') AS
+SELECT 
+    domain,
+    TIMESTAMPTOSTRING(WINDOWSTART, 'yyy-MM-dd HH:mm:ss', 'UTC') AS window_start,
+    TIMESTAMPTOSTRING(WINDOWEND, 'yyy-MM-dd HH:mm:ss', 'UTC') AS window_end,
+    SUM(CASE WHEN type = 'edit' THEN 1 ELSE 0 END) AS edit_count,
+    SUM(CASE WHEN type = 'categorize' THEN 1 ELSE 0 END) AS categorize_count,
+    SUM(CASE WHEN type = 'log' THEN 1 ELSE 0 END) AS log_count,
+    SUM(CASE WHEN type = 'new' THEN 1 ELSE 0 END) AS new_count
+FROM wikimedia_recentchange_ts_transform_type
+WINDOW TUMBLING (SIZE 10 SECONDS)
+group by domain
+EMIT FINAL;
+
+-- Pull query
+SELECT 
+    window_start,
+    window_end,
+    domain,
+    CAST(edit_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS edit_prc, 
+    CAST(categorize_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS categorize_prc, 
+    CAST(log_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS log_prc, 
+    CAST(new_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS new_prc 
+FROM wikimedia_count_change_type_domain_timewindow;
+
+-- Push query
+SELECT 
+    window_start,
+    window_end,
+    domain,
+    CAST(edit_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS edit_prc, 
+    CAST(categorize_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS categorize_prc, 
+    CAST(log_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS log_prc, 
+    CAST(new_count AS DOUBLE) / CAST(edit_count + categorize_count + log_count + new_count AS DOUBLE) AS new_prc 
+FROM wikimedia_count_change_type_domain_timewindow
+EMIT CHANGES;
+
+
+
+----- Additional questions -----
+
+-- The field Wiki indicates the language version of the changed articles. Which 3 versions
+-- have been changing most often in your whole stream?
+
+-- Create materialized table
+CREATE TABLE wikimedia_count_change_per_wiki
+WITH (kafka_topic='wikimedia_wiki_count') AS
+SELECT 
+    wiki, 
+    COUNT(*) as change_count
+FROM WIKIMEDIA_RECENTCHANGES_STREAM
+GROUP BY wiki;
+
+-- Pull query
+SELECT * FROM wikimedia_count_change_per_wiki;
+
+-- The most changing version are:
+--   commonswiki
+--   wikidatawiki
+--   enwiki
+
+
+-- What are the top 5 users with the most changes in your stream data? What about every
+-- 60 seconds?
+
+-- Create materialized table
+CREATE TABLE wikimedia_count_change_per_user
+WITH (kafka_topic='wikimedia_user_count') AS
+SELECT 
+    user, 
+    COUNT(*) as change_count
+FROM WIKIMEDIA_RECENTCHANGES_STREAM
+GROUP BY user;
+
+-- Pull query
+SELECT * FROM wikimedia_count_change_per_user;
+
+-- During the examined period, the most active users were: 
+--   A1Cafel
+--   Cewbot
+--   Carlinmack
+--   Tagishsimon
+--   1234qwer1234qwer4
+
+
+-- Create intermediate stream to transform timestamp
+CREATE STREAM wikimedia_recentchange_ts_transform_user
+    WITH(
+        kafka_topic = 'wikimedia_recentchange_ts_transform_user',
+        value_format='AVRO',
+        key_format='JSON',
+        TIMESTAMP='timestamp'
+    )
+AS SELECT
+    timestamp*1000 AS timestamp,
+    user
+FROM WIKIMEDIA_RECENTCHANGES_STREAM
+EMIT CHANGES;
+
+-- Create materialized table with tumbling window
+CREATE TABLE wikimedia_count_change_per_user_timewindow
+WITH (kafka_topic='wikimedia_user_count_timewindow') AS
+SELECT 
+    TIMESTAMPTOSTRING(WINDOWSTART, 'yyy-MM-dd HH:mm:ss', 'UTC') AS window_start,
+    TIMESTAMPTOSTRING(WINDOWEND, 'yyy-MM-dd HH:mm:ss', 'UTC') AS window_end,
+    user, 
+    COUNT(*) as change_count
+FROM wikimedia_recentchange_ts_transform_user
+WINDOW TUMBLING (SIZE 60 SECONDS)
+GROUP BY user
+EMIT FINAL;
+
+-- Push query
+SELECT
+    window_start,
+    window_end,
+    user,
+    change_count
+FROM wikimedia_count_change_per_user_timewindow
+EMIT CHANGES;
+
+-- In the 60 seconds from 2023-01-07 17:05:00 to 2023-01-07 17:06:00 the most active users were: 
+--   A1Cafel
+--   Cewbot
+--   Tagishsimon
+--   Carlinmack
+--   1234qwer1234qwer4

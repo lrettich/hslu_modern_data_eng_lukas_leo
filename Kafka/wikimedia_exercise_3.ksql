@@ -14,14 +14,14 @@ SELECT
     bot_change_count,
     non_bot_change_count,
     CAST(bot_change_count AS DOUBLE) / CAST(bot_change_count + non_bot_change_count AS DOUBLE) AS bot_prc 
-FROM  wikimedia_count_change_bot;
+FROM wikimedia_count_change_bot;
 
 -- Push query
 SELECT 
     bot_change_count,
     non_bot_change_count,
     CAST(bot_change_count AS DOUBLE) / CAST(bot_change_count + non_bot_change_count AS DOUBLE) AS bot_prc 
-FROM  wikimedia_count_change_bot
+FROM wikimedia_count_change_bot
 EMIT CHANGES;
 
 -- The overall percentage of messages created by bots is around 33%.
@@ -44,7 +44,7 @@ SELECT
     bot_change_count,
     non_bot_change_count,
     CAST(bot_change_count AS DOUBLE) / CAST(bot_change_count + non_bot_change_count AS DOUBLE) AS bot_prc 
-FROM  wikimedia_count_change_bot_per_domain;
+FROM wikimedia_count_change_bot_per_domain;
 
 -- Push query
 SELECT 
@@ -52,10 +52,22 @@ SELECT
     bot_change_count,
     non_bot_change_count,
     CAST(bot_change_count AS DOUBLE) / CAST(bot_change_count + non_bot_change_count AS DOUBLE) AS bot_prc 
-FROM  wikimedia_count_change_bot_per_domain
+FROM wikimedia_count_change_bot_per_domain
 EMIT CHANGES;
 
--- TODO: State answer
+-- There are many domains with very few changes. 
+-- These are showing extrem bot / non-bot percentages. 
+-- Hence, domains with less than 1000 changes are excluded.
+SELECT 
+    domain,
+    bot_change_count,
+    non_bot_change_count,
+    CAST(bot_change_count AS DOUBLE) / CAST(bot_change_count + non_bot_change_count AS DOUBLE) AS bot_prc 
+FROM wikimedia_count_change_bot_per_domain
+WHERE bot_change_count + non_bot_change_count >= 1000;
+
+-- The domain with the largest fraction of bot changes is "he.wikisource.org" with over 99.9% bot changes. 
+-- The domain with the smallest fraction is "de.wiktionary.org" where not one single bot change happened during the examined period.
 
 
 ----- EXERCISE 3.3 -----
@@ -74,6 +86,9 @@ AS SELECT
 FROM WIKIMEDIA_RECENTCHANGES_STREAM
 EMIT CHANGES;
 
+-- Set property to allow "EMIT FINAL"
+SET 'ksql.suppress.enabled'='true';
+
 -- Create materialized table
 CREATE TABLE wikimedia_count_change_bot_timewindow
 WITH (kafka_topic='wikimedia_bot_count_timewindow') AS
@@ -85,9 +100,8 @@ SELECT
     SUM(CASE WHEN bot = true THEN 0 ELSE 1 END) AS non_bot_change_count
 FROM wikimedia_recentchange_ts_transform
 WINDOW TUMBLING (SIZE 10 SECONDS)
-group by 1;
-
--- EMIT FINAL???
+group by 1
+EMIT FINAL;
 
 -- Pull query
 SELECT 
@@ -96,7 +110,7 @@ SELECT
     bot_change_count,
     non_bot_change_count,
     CAST(bot_change_count AS DOUBLE) / CAST(bot_change_count + non_bot_change_count AS DOUBLE) AS bot_prc 
-FROM  wikimedia_count_change_bot_timewindow;
+FROM wikimedia_count_change_bot_timewindow;
 
 -- Push query
 SELECT 
@@ -105,5 +119,42 @@ SELECT
     bot_change_count,
     non_bot_change_count,
     CAST(bot_change_count AS DOUBLE) / CAST(bot_change_count + non_bot_change_count AS DOUBLE) AS bot_prc 
-FROM  wikimedia_count_change_bot_timewindow
+FROM wikimedia_count_change_bot_timewindow
+EMIT CHANGES;
+
+
+----- EXERCISE 3.4 -----
+-- Create materialized table
+CREATE TABLE wikimedia_count_change_bot_domain_timewindow
+WITH (kafka_topic='wikimedia_count_change_bot_domain_timewindow') AS
+SELECT 
+    domain,
+    TIMESTAMPTOSTRING(WINDOWSTART, 'yyy-MM-dd HH:mm:ss', 'UTC') AS window_start,
+    TIMESTAMPTOSTRING(WINDOWEND, 'yyy-MM-dd HH:mm:ss', 'UTC') AS window_end,
+    SUM(CASE WHEN bot = true THEN 1 ELSE 0 END) AS bot_change_count,
+    SUM(CASE WHEN bot = true THEN 0 ELSE 1 END) AS non_bot_change_count
+FROM wikimedia_recentchange_ts_transform
+WINDOW TUMBLING (SIZE 10 SECONDS)
+group by domain
+EMIT FINAL;
+
+-- Pull query
+SELECT 
+    window_start,
+    window_end,
+    domain,
+    bot_change_count,
+    non_bot_change_count,
+    CAST(bot_change_count AS DOUBLE) / CAST(bot_change_count + non_bot_change_count AS DOUBLE) AS bot_prc 
+FROM wikimedia_count_change_bot_domain_timewindow;
+
+-- Push query
+SELECT 
+    window_start,
+    window_end,
+    domain,
+    bot_change_count,
+    non_bot_change_count,
+    CAST(bot_change_count AS DOUBLE) / CAST(bot_change_count + non_bot_change_count AS DOUBLE) AS bot_prc 
+FROM wikimedia_count_change_bot_domain_timewindow
 EMIT CHANGES;
