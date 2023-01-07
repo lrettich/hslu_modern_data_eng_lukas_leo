@@ -23,3 +23,7 @@ The project for exam 1 contains a HOP project and a Tableau visualization.
 ### Visualization
 
 `Dashboard.twb`: Tableau dashboard visualizing the data from database table `job_storage`.
+
+## Exam 2 (Kafka)
+
+The solutions to all exercises from "Stream Exercises" are in folder `Kafka/`.
